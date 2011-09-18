@@ -28,11 +28,22 @@ def reverse_dict(d):
     return dict((v, k) for k, v in d.items())
 
 
-def star_index_lists(n):
+def star_index_enumerate(n):
     if n == 0:
         return (((), ((),)),)
     else:
         f = lambda s, t: tuple(a + (b,) for a in s for b in t)
         return tuple((k + (m,), f(s, t))
-                     for k, s in star_index_lists(n-1)
+                     for k, s in star_index_enumerate(n-1)
                      for m, t in enumerate(((0, 1), (1,), (1, 2))))
+
+
+def lower_star_ranking(data):
+    r = ranking(data)
+    r0 = r[1,1]
+    index_lists = star_index_enumerate(asarray(data).ndim)
+
+    f = lambda pos: tuple(reversed(sorted(map(lambda i: r[i], pos))))
+    t = sorted(tuple((f(pos), i) for i, pos in index_lists))
+
+    return dict((k, i) for i, (v, k) in enumerate(t) if v[0] == r0)
