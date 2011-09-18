@@ -33,17 +33,16 @@ def star_index_enumerate(n):
         return (((), ((),)),)
     else:
         f = lambda s, t: tuple(a + (b,) for a in s for b in t)
-        return tuple((k + (m,), f(s, t))
-                     for k, s in star_index_enumerate(n-1)
-                     for m, t in enumerate(((0, 1), (1,), (1, 2))))
+        return ((k + (m,), f(s, t))
+                for k, s in star_index_enumerate(n-1)
+                for m, t in enumerate(((0, 1), (1,), (1, 2))))
 
 
 def lower_star_ranking(data):
+    dim = asarray(data).ndim
     r = ranking(data)
-    r0 = r[1,1]
-    index_lists = star_index_enumerate(asarray(data).ndim)
 
     f = lambda pos: tuple(reversed(sorted(map(lambda i: r[i], pos))))
-    t = sorted(tuple((f(pos), i) for i, pos in index_lists))
+    t = sorted(tuple((f(pos), i) for i, pos in star_index_enumerate(dim)))
 
-    return dict((k, i) for i, (v, k) in enumerate(t) if v[0] == r0)
+    return dict((k, i) for i, (v, k) in enumerate(t) if v[0] == r[1, 1])
