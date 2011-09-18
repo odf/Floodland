@@ -19,8 +19,8 @@ def multi_enumerate(data):
     return reduce(f, range(asarray(data).ndim), (((), data),))
 
 
-def ranking(data):
-    t = sorted(tuple((v, i) for i, v in multi_enumerate(data)))
+def ranking(enum):
+    t = sorted(tuple((v, i) for i, v in enum))
     return dict((k, i) for i, (v, k) in enumerate(t))
 
 
@@ -39,10 +39,9 @@ def star_index_enumerate(n):
 
 
 def lower_star_ranking(data):
-    dim = asarray(data).ndim
-    r = ranking(data)
+    star = star_index_enumerate(asarray(data).ndim)
+    r = ranking(multi_enumerate(data))
 
     f = lambda pos: tuple(reversed(sorted(map(lambda i: r[i], pos))))
-    t = sorted(tuple((f(pos), i) for i, pos in star_index_enumerate(dim)))
-
-    return dict((k, i) for i, (v, k) in enumerate(t) if v[0] == r[1, 1])
+    enum = ((i, f(p)) for i, p in star)
+    return ranking((i, v) for i, v in enum if v[0] == r[1,1])
