@@ -15,7 +15,7 @@ def ranking(enum):
     return dict((k, i) for i, (v, k) in enumerate(t))
 
 
-def induced_lower_ranking(cells, node_ranking):
+def lower_induced_ranking(cells, node_ranking):
     f = lambda pos: tuple(reversed(sorted(map(lambda i: node_ranking[i], pos))))
     enum = ((i, f(p)) for i, p in cells)
     return ranking((i, v) for i, v in enum if v[0] == node_ranking[1,1])
@@ -47,4 +47,4 @@ def cubic_star_enumerate(n):
 def lower_star_ranking(data, *pos):
     ranks = ranking(multi_enumerate(neighborhood_cube(data, *pos)))
     star = cubic_star_enumerate(len(pos))
-    return induced_lower_ranking(star, ranks)
+    return lower_induced_ranking(star, ranks)
