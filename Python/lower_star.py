@@ -15,10 +15,10 @@ def ranking(enum):
     return dict((k, i) for i, (v, k) in enumerate(t))
 
 
-def induced_lower_ranking(cells, node_ranks):
-    f = lambda pos: tuple(reversed(sorted(map(lambda i: node_ranks[i], pos))))
+def induced_lower_ranking(cells, node_ranking):
+    f = lambda pos: tuple(reversed(sorted(map(lambda i: node_ranking[i], pos))))
     enum = ((i, f(p)) for i, p in cells)
-    return ranking((i, v) for i, v in enum if v[0] == node_ranks[1,1])
+    return ranking((i, v) for i, v in enum if v[0] == node_ranking[1,1])
 
 
 def neighborhood_cube(data, *pos):
