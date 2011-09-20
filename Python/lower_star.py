@@ -48,3 +48,48 @@ def lower_star_ranking(data, *pos):
     ranks = ranking(multi_enumerate(neighborhood_cube(data, *pos)))
     star = cubic_star_enumerate(len(pos))
     return lower_induced_ranking(star, ranks)
+
+
+def lower_star_pairings(data, *pos):
+    ranking = lower_star_ranking(data, *pos)
+    rev = reverse_dict(ranking)
+    ranked = tuple(rev[i] for i in xrange(len(rev)))
+
+    dim = lambda k: len(filter(lambda i: i != 1, k))
+    free_faces = map(dim, ranked)
+    n = len(free_faces)
+
+    def step(acc, zero_pos, one_pos):
+        def faces(pos):
+            pass #TODO implement
+
+        def free_face_of(pos):
+            pass #TODO implement
+        
+        def remove(pos):
+            free_faces[pos] = None
+            for k in faces(pos):
+                free_faces[k] -= 1
+                if free_faces[k] == 1 and k < one_pos:
+                    one_pos = k
+                elif free_faces[k] == 0 and k < zero_pos:
+                    zero_pos = k
+        
+        while zero_pos < n and free_faces[zero_pos] != 0:
+            zero_pos += 1
+        while one_pos < 1 and free_faces[one_pos] != 1:
+            one_pos += 1
+
+        if one_pos < n:
+            partner = free_face_of(one_pos)
+            remove(one_pos)
+            remove(partner)
+            return step(acc + [(ranked[one_pos], ranked[partner])],
+                        zero_pos, one_pos)
+        elif zero_pos < n:
+            remove(zero_pos)
+            return step(acc + [(ranked[zero_pos],)], zero_pos, one_pos)
+        else:
+            return acc
+
+    return step([], 0, 0)
