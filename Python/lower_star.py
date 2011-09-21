@@ -1,8 +1,12 @@
 from numpy import asarray
 
 
-def reverse_dict(d):
-    return dict((v, k) for k, v in d.items())
+def count(gen):
+    return reduce(lambda n, x: n + 1, gen, 0)
+
+
+def first(gen):
+    return next(gen, None)
 
 
 def multi_enumerate(data):
@@ -16,12 +20,12 @@ def ranking(enum):
 
 
 def lower_induced_ranking(cells, node_ranking):
-    f = lambda pos: tuple(reversed(sorted(map(lambda i: node_ranking[i], pos))))
+    f = lambda cell: tuple(reversed(sorted(node_ranking[i] for i in cell)))
     enum = ((i, f(p)) for i, p in cells)
     return ranking((i, v) for i, v in enum if v[0] == node_ranking[1,1])
 
 
-def neighborhood_cube(data, *pos):
+def neighborhood_cube(data, pos):
     a = asarray(data)
 
     if len(pos) > a.ndim:
@@ -44,52 +48,48 @@ def cubic_star_enumerate(n):
                 for m, t in enumerate(((0, 1), (1,), (1, 2))))
 
 
-def lower_star_ranking(data, *pos):
-    ranks = ranking(multi_enumerate(neighborhood_cube(data, *pos)))
+def lower_star_ranking(data, pos):
+    ranks = ranking(multi_enumerate(neighborhood_cube(data, pos)))
     star = cubic_star_enumerate(len(pos))
     return lower_induced_ranking(star, ranks)
 
 
-def lower_star_pairings(data, *pos):
-    ranking = lower_star_ranking(data, *pos)
-    rev = reverse_dict(ranking)
-    ranked = tuple(rev[i] for i in xrange(len(rev)))
+def face(cell, i):
+    return tuple((1 if j == i else v) for j, v in enumerate(cell))
 
-    dim = lambda k: len(filter(lambda i: i != 1, k))
-    free_faces = map(dim, ranked)
-    n = len(free_faces)
 
-    def step(acc, zero_pos, one_pos):
-        def faces(pos):
-            pass #TODO implement
+def faces(cell):
+    return tuple(face(cell, i) for i, v in enumerate(cell) if v != 1)
 
-        def free_face_of(pos):
-            pass #TODO implement
-        
-        def remove(pos):
-            free_faces[pos] = None
-            for k in faces(pos):
-                free_faces[k] -= 1
-                if free_faces[k] == 1 and k < one_pos:
-                    one_pos = k
-                elif free_faces[k] == 0 and k < zero_pos:
-                    zero_pos = k
-        
-        while zero_pos < n and free_faces[zero_pos] != 0:
-            zero_pos += 1
-        while one_pos < 1 and free_faces[one_pos] != 1:
-            one_pos += 1
 
-        if one_pos < n:
-            partner = free_face_of(one_pos)
-            remove(one_pos)
-            remove(partner)
-            return step(acc + [(ranked[one_pos], ranked[partner])],
-                        zero_pos, one_pos)
-        elif zero_pos < n:
-            remove(zero_pos)
-            return step(acc + [(ranked[zero_pos],)], zero_pos, one_pos)
+def dim(cell):
+    return count(i for i in cell if i != 1)
+
+
+def lower_star_pairings(data, pos):
+    ranking = lower_star_ranking(data, pos)
+    cells = ranking.keys()
+    used = dict((cell, False) for cell in cells)
+
+    def free_faces(cell):
+        return (f for f in faces(cell) if not used[f])
+
+    def first_with_free_neighbor_count(n):
+        return first(c for c in cells
+                     if not used[c] and count(free_faces(c)) == n)
+
+    result = []
+
+    while True:
+        paired_cell = first_with_free_neighbor_count(1)
+        if paired_cell:
+            partner = first(free_faces(paired_cell))
+            used[paired_cell] = used[partner] = True
+            result.append((paired_cell, partner))
         else:
-            return acc
-
-    return step([], 0, 0)
+            singular_cell = first_with_free_neighbor_count(0)
+            if singular_cell:
+                used[singular_cell] = True
+                result.append((singular_cell,))
+            else:
+                return result
