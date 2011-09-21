@@ -9,6 +9,10 @@ def first(gen):
     return next(gen, None)
 
 
+def reverse_dict(d):
+    return dict((v, k) for k, v in d.items())
+
+
 def multi_enumerate(data):
     f = lambda t, n: tuple((i+(j,),w)  for i, v in t for j, w in enumerate(v))
     return reduce(f, range(asarray(data).ndim), (((), data),))
@@ -62,13 +66,11 @@ def faces(cell):
     return tuple(face(cell, i) for i, v in enumerate(cell) if v != 1)
 
 
-def dim(cell):
-    return count(i for i in cell if i != 1)
-
-
 def lower_star_pairings(data, pos):
     ranking = lower_star_ranking(data, pos)
-    cells = ranking.keys()
+    ranked = reverse_dict(ranking)
+    cells = tuple(ranked[k] for k in range(len(ranked)))
+
     used = dict((cell, False) for cell in cells)
 
     def free_faces(cell):
