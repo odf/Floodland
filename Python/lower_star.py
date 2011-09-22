@@ -68,29 +68,40 @@ def neighborhood_cube(data, pos):
         return a[tuple(slice(v-1,v+2) for i, v in enumerate(pos))]
 
 
+def memoize(f, cache = {}):
+    def g(*args, **kwargs):
+        key = ( f, tuple(args), frozenset(kwargs.items()) )
+        if key not in cache:
+            cache[key] = f(*args, **kwargs)
+        return cache[key]
+    return g
+
+
+@memoize
 def cubic_star_enumerate(n):
     if n == 0:
         return (((), ((),)),)
     else:
         f = lambda s, t: tuple(a + (b,) for a in s for b in t)
-        return ((k + (m,), f(s, t))
-                for k, s in cubic_star_enumerate(n-1)
-                for m, t in enumerate(((0, 1), (1,), (1, 2))))
+        return tuple((k + (m,), f(s, t))
+                     for k, s in cubic_star_enumerate(n-1)
+                     for m, t in enumerate(((0, 1), (1,), (1, 2))))
 
 
+@memoize
 def cubic_star_face(cell, i):
     return tuple((1 if j == i else v) for j, v in enumerate(cell))
 
 
+@memoize
 def cubic_star_faces(cell):
     return tuple(cubic_star_face(cell, i) for i, v in enumerate(cell) if v != 1)
 
 
 def lower_star_ranking(data, pos):
     ranks = ranking(multi_enumerate(neighborhood_cube(data, pos)))
-    star = cubic_star_enumerate(len(pos))
     cell_key = lambda cell: tuple(reversed(sorted(ranks[i] for i in cell)))
-    enum = ((i, cell_key(p)) for i, p in star)
+    enum = ((i, cell_key(p)) for i, p in cubic_star_enumerate(len(pos)))
     return ranking((i, v) for i, v in enum if v[0] == ranks[1,1])
 
 
