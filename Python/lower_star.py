@@ -23,10 +23,42 @@ def ranking(enum):
     return dict((k, i) for i, (v, k) in enumerate(t))
 
 
+def values_in_order(ranking):
+    ranked_to_value = reverse_dict(ranking)
+    return tuple(ranked_to_value[k] for k in range(len(ranked_to_value)))
+
+
 def lower_induced_ranking(cells, node_ranking):
     f = lambda cell: tuple(reversed(sorted(node_ranking[i] for i in cell)))
     enum = ((i, f(p)) for i, p in cells)
     return ranking((i, v) for i, v in enum if v[0] == node_ranking[1,1])
+
+
+def flow(cells, faces):
+    used = dict((cell, False) for cell in cells)
+
+    def free_faces(cell):
+        return (f for f in faces(cell) if not used[f])
+
+    def first_with_free_neighbor_count(n):
+        return first(c for c in cells
+                     if not used[c] and count(free_faces(c)) == n)
+
+    result = []
+
+    while True:
+        paired_cell = first_with_free_neighbor_count(1)
+        if paired_cell:
+            partner = first(free_faces(paired_cell))
+            used[paired_cell] = used[partner] = True
+            result.append((paired_cell, partner))
+        else:
+            singular_cell = first_with_free_neighbor_count(0)
+            if singular_cell:
+                used[singular_cell] = True
+                result.append((singular_cell,))
+            else:
+                return result
 
 
 def neighborhood_cube(data, pos):
@@ -52,46 +84,20 @@ def cubic_star_enumerate(n):
                 for m, t in enumerate(((0, 1), (1,), (1, 2))))
 
 
+def cubic_star_face(cell, i):
+    return tuple((1 if j == i else v) for j, v in enumerate(cell))
+
+
+def cubic_star_faces(cell):
+    return tuple(cubic_star_face(cell, i) for i, v in enumerate(cell) if v != 1)
+
+
 def lower_star_ranking(data, pos):
     ranks = ranking(multi_enumerate(neighborhood_cube(data, pos)))
     star = cubic_star_enumerate(len(pos))
     return lower_induced_ranking(star, ranks)
 
 
-def face(cell, i):
-    return tuple((1 if j == i else v) for j, v in enumerate(cell))
-
-
-def faces(cell):
-    return tuple(face(cell, i) for i, v in enumerate(cell) if v != 1)
-
-
-def lower_star_pairings(data, pos):
-    ranking = lower_star_ranking(data, pos)
-    ranked = reverse_dict(ranking)
-    cells = tuple(ranked[k] for k in range(len(ranked)))
-
-    used = dict((cell, False) for cell in cells)
-
-    def free_faces(cell):
-        return (f for f in faces(cell) if not used[f])
-
-    def first_with_free_neighbor_count(n):
-        return first(c for c in cells
-                     if not used[c] and count(free_faces(c)) == n)
-
-    result = []
-
-    while True:
-        paired_cell = first_with_free_neighbor_count(1)
-        if paired_cell:
-            partner = first(free_faces(paired_cell))
-            used[paired_cell] = used[partner] = True
-            result.append((paired_cell, partner))
-        else:
-            singular_cell = first_with_free_neighbor_count(0)
-            if singular_cell:
-                used[singular_cell] = True
-                result.append((singular_cell,))
-            else:
-                return result
+def lower_star_flow(data, pos):
+    cells = values_in_order(lower_star_ranking(data, pos))
+    return flow(cells, cubic_star_faces)
