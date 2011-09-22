@@ -9,29 +9,18 @@ def first(gen):
     return next(gen, None)
 
 
-def reverse_dict(d):
-    return dict((v, k) for k, v in d.items())
-
-
-def multi_enumerate(data):
-    f = lambda t, n: tuple((i+(j,),w)  for i, v in t for j, w in enumerate(v))
-    return reduce(f, range(asarray(data).ndim), (((), data),))
-
-
 def ranking(enum):
     t = sorted(tuple((v, i) for i, v in enum))
     return dict((k, i) for i, (v, k) in enumerate(t))
 
 
+def reverse_dict(d):
+    return dict((v, k) for k, v in d.items())
+
+
 def values_in_order(ranking):
     ranked_to_value = reverse_dict(ranking)
     return tuple(ranked_to_value[k] for k in range(len(ranked_to_value)))
-
-
-def lower_induced_ranking(cells, node_ranking):
-    f = lambda cell: tuple(reversed(sorted(node_ranking[i] for i in cell)))
-    enum = ((i, f(p)) for i, p in cells)
-    return ranking((i, v) for i, v in enum if v[0] == node_ranking[1,1])
 
 
 def flow(cells, faces):
@@ -59,6 +48,11 @@ def flow(cells, faces):
                 result.append((singular_cell,))
             else:
                 return result
+
+
+def multi_enumerate(data):
+    f = lambda t, n: tuple((i+(j,),w)  for i, v in t for j, w in enumerate(v))
+    return reduce(f, range(asarray(data).ndim), (((), data),))
 
 
 def neighborhood_cube(data, pos):
@@ -95,7 +89,9 @@ def cubic_star_faces(cell):
 def lower_star_ranking(data, pos):
     ranks = ranking(multi_enumerate(neighborhood_cube(data, pos)))
     star = cubic_star_enumerate(len(pos))
-    return lower_induced_ranking(star, ranks)
+    cell_key = lambda cell: tuple(reversed(sorted(ranks[i] for i in cell)))
+    enum = ((i, cell_key(p)) for i, p in star)
+    return ranking((i, v) for i, v in enum if v[0] == ranks[1,1])
 
 
 def lower_star_flow(data, pos):
